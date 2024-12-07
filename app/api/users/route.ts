@@ -1,30 +1,40 @@
 import User from "@/lib/models/User";
 import { connectToDB } from "@/lib/mongoDB";
-import { auth } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
 
 import { NextRequest, NextResponse } from "next/server";
 
 export const GET = async (req: NextRequest) => {
   try {
-    const { userId } = auth()
+    const { userId } = auth();
 
     if (!userId) {
-      return new NextResponse(JSON.stringify({ message: "Unauthorized" }), { status: 401 })
+      console.error("Unauthorized: User ID is missing");
+      return new NextResponse(JSON.stringify({ message: "Unauthorized" }), { status: 401 });
     }
 
-    await connectToDB()
+    console.log("User ID from Clerk:", userId);
 
-    let user = await User.findOne({ clerkId: userId })
+    // Connect to the database
+    await connectToDB();
+    console.log("Database connected successfully");
 
-    // When the user sign-in for the 1st, immediately we will create a new user for them
+    // Check if user exists
+    let user = await User.findOne({ clerkId: userId });
     if (!user) {
-      user = await User.create({ clerkId: userId })
-      await user.save()
+      try {
+        // Create a new user if not found
+        user = await User.create({ clerkId: userId });
+        console.log("New user created:", user);
+      } catch (createError) {
+        console.error("Error creating user:", createError);
+        return new NextResponse("Failed to create user", { status: 500 });
+      }
     }
 
-    return NextResponse.json(user, { status: 200 })
+    return NextResponse.json(user, { status: 200 });
   } catch (err) {
-    console.log("[users_GET]", err)
-    return new NextResponse("Internal Server Error", { status: 500 })
+    console.error("[users_GET] Internal Server Error:", err);
+    return new NextResponse("Internal Server Error", { status: 500 });
   }
-}
+};
