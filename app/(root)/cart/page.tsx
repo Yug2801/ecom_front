@@ -1,16 +1,19 @@
 "use client";
 
 import useCart from "@/lib/hooks/useCart";
-
 import { useUser } from "@clerk/nextjs";
 import { MinusCircle, PlusCircle, Trash } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 const Cart = () => {
   const router = useRouter();
   const { user } = useUser();
   const cart = useCart();
+
+  const [showPhonePopup, setShowPhonePopup] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState("");
 
   const total = cart.cartItems.reduce(
     (acc, cartItem) => acc + cartItem.item.price * cartItem.quantity,
@@ -18,27 +21,50 @@ const Cart = () => {
   );
   const totalRounded = parseFloat(total.toFixed(2));
 
-  const customer = {
-    clerkId: user?.id,
-    email: user?.emailAddresses[0].emailAddress,
-    name: user?.fullName,
+  const handleCheckout = () => {
+    if (!user) {
+      router.push("/sign-in");
+    } else {
+      setShowPhonePopup(true);
+    }
   };
 
-  const handleCheckout = async () => {
+  const handlePhoneSubmit = async () => {
     try {
-      if (!user) {
-        router.push("sign-in");
+      if (!phoneNumber) {
+        alert("Please enter a phone number.");
+        return;
+      }
+
+      // Prepare data for the checkout request
+      const orderDetails = {
+        cartItems: cart.cartItems,
+        customer: user,
+        phoneNumber, // Include phone number in the request
+      };
+
+      // Send data to the backend API to initiate checkout
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/checkout`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(orderDetails),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        // Redirect the user to the payment success page
+        router.push("/payment_success");
       } else {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/checkout`, {
-          method: "POST",
-          body: JSON.stringify({ cartItems: cart.cartItems, customer }),
-        });
-        const data = await res.json();
-        window.location.href = data.url;
-        console.log(data);
+        // Handle errors from the server
+        console.error("Error during checkout:", data);
+        alert("Error during checkout. Please try again.");
       }
     } catch (err) {
-      console.log("[checkout_POST]", err);
+      console.error("[handlePhoneSubmit]", err);
+      alert("An error occurred during checkout. Please try again.");
     }
   };
 
@@ -53,7 +79,10 @@ const Cart = () => {
         ) : (
           <div>
             {cart.cartItems.map((cartItem) => (
-              <div className="w-full flex max-sm:flex-col max-sm:gap-3 hover:bg-grey-1 px-4 py-3 items-center max-sm:items-start justify-between">
+              <div
+                key={cartItem.item._id}
+                className="w-full flex max-sm:flex-col max-sm:gap-3 hover:bg-grey-1 px-4 py-3 items-center max-sm:items-start justify-between"
+              >
                 <div className="flex items-center">
                   <Image
                     src={cartItem.item.media[0]}
@@ -64,13 +93,9 @@ const Cart = () => {
                   />
                   <div className="flex flex-col gap-3 ml-4">
                     <p className="text-body-bold">{cartItem.item.title}</p>
-                    {cartItem.color && (
-                      <p className="text-small-medium">{cartItem.color}</p>
-                    )}
-                    {cartItem.size && (
-                      <p className="text-small-medium">{cartItem.size}</p>
-                    )}
-                    <p className="text-small-medium">Rs.{cartItem.item.price}</p>
+                    {cartItem.color && <p className="text-small-medium">{cartItem.color}</p>}
+                    {cartItem.size && <p className="text-small-medium">{cartItem.size}</p>}
+                    <p className="text-small-medium">Rs. {cartItem.item.price}</p>
                   </div>
                 </div>
 
@@ -99,9 +124,7 @@ const Cart = () => {
       <div className="w-1/3 max-lg:w-full flex flex-col gap-8 bg-grey-1 rounded-lg px-4 py-5">
         <p className="text-heading4-bold pb-4">
           Summary{" "}
-          <span>{`(${cart.cartItems.length} ${
-            cart.cartItems.length > 1 ? "items" : "item"
-          })`}</span>
+          <span>{`(${cart.cartItems.length} ${cart.cartItems.length > 1 ? "items" : "item"})`}</span>
         </p>
         <div className="flex justify-between text-body-semibold">
           <span>Total Amount</span>
@@ -114,6 +137,27 @@ const Cart = () => {
           Proceed to Checkout
         </button>
       </div>
+
+      {showPhonePopup && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg">
+            <h2 className="text-heading4-bold mb-4">Enter Your Phone Number</h2>
+            <input
+              type="text"
+              placeholder="Phone Number"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              className="border rounded-lg w-full p-2 mb-4"
+            />
+            <button
+              className="bg-blue-500 text-white py-2 px-4 rounded-lg w-full hover:bg-blue-600"
+              onClick={handlePhoneSubmit}
+            >
+              Submit
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

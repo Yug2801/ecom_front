@@ -8,7 +8,6 @@ import { useEffect, useState } from "react";
 
 const Wishlist = () => {
   const { user } = useUser();
-
   const [loading, setLoading] = useState(true);
   const [signedInUser, setSignedInUser] = useState<UserType | null>(null);
   const [wishlist, setWishlist] = useState<ProductType[]>([]);
@@ -37,9 +36,7 @@ const Wishlist = () => {
 
     const wishlistProducts = await Promise.all(
       signedInUser.wishlist.map(async (productId) => {
-        console.log(productId);
         const res = await getProductDetails(productId);
-        console.log(res);
         return res;
       })
     );
