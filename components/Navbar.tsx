@@ -1,7 +1,6 @@
 "use client";
 
 import useCart from "@/lib/hooks/useCart";
-
 import { UserButton, useUser } from "@clerk/nextjs";
 import { CircleUserRound, Menu, Search, ShoppingCart } from "lucide-react";
 import Image from "next/image";
@@ -21,33 +20,35 @@ const Navbar = () => {
   return (
     <div className="sticky top-0 z-10 py-2 px-10 flex gap-2 justify-between items-center bg-white max-sm:px-2">
       <Link href="/">
-        <Image src="/logo.png" alt="logo" width={130} height={100} />
+        {/* Set the logo size to 8% of the viewport height */}
+        <Image src="/logo.png" alt="logo" width={0} height={0} style={{ height: "8vh", width: "auto" }} />
       </Link>
 
       <div className="flex gap-4 text-base-bold max-lg:hidden">
         <Link
           href="/"
-          className={`hover:text-red-1 ${
-            pathname === "/" && "text-red-1"
-          }`}
+          className={`hover:text-red-1 ${pathname === "/" && "text-red-1"}`}
         >
           Home
         </Link>
         <Link
           href={user ? "/wishlist" : "/sign-in"}
-          className={`hover:text-red-1 ${
-            pathname === "/wishlist" && "text-red-1"
-          }`}
+          className={`hover:text-red-1 ${pathname === "/wishlist" && "text-red-1"}`}
         >
           Wishlist
         </Link>
         <Link
           href={user ? "/orders" : "/sign-in"}
-          className={`hover:text-red-1 ${
-            pathname === "/orders" && "text-red-1"
-          }`}
+          className={`hover:text-red-1 ${pathname === "/orders" && "text-red-1"}`}
         >
           Orders
+        </Link>
+        {/* Added About Us Link */}
+        <Link
+          href="/about-us"
+          className={`hover:text-red-1 ${pathname === "/about-us" && "text-red-1"}`}
+        >
+          About Us
         </Link>
       </div>
 
@@ -103,6 +104,13 @@ const Navbar = () => {
             >
               <ShoppingCart />
               <p className="text-base-bold">Cart ({cart.cartItems.length})</p>
+            </Link>
+            {/* Added About Us Link in the dropdown */}
+            <Link
+              href="/about-us"
+              className="hover:text-red-1"
+            >
+              About Us
             </Link>
           </div>
         )}
