@@ -9,8 +9,8 @@ import ToasterProvider from "@/lib/providers/ToasterProvider";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "ECOM Store",
-  description: " Ecommerce Store",
+  title: "Shree Ram Solar",
+  description: " Solar Store",
 };
 
 export default function RootLayout({
